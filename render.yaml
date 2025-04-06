@@ -1,0 +1,124 @@
+services:
+  # Mock API Service
+  - name: sentiment-mock-api
+    type: web
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app/api/mock_api.py
+    envVars:
+      - key: API_PORT
+        value: 10000
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: DATABASE_URL
+        value: postgresql://sentiment_analysis_db_hw4f_user:KbWDg0krIIeSvBWG7r6qLexLWrAinfcA@dpg-cvp8433e5dus73cc808g-a/sentiment_analysis_db_hw4f
+
+  # Model API Service
+  - name: sentiment-model-api
+    type: web
+    env: python
+    buildCommand: pip install -r requirements.txt && python app/models/train_model.py
+    startCommand: python app/api/model_api.py
+    envVars:
+      - key: API_PORT
+        value: 10001
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: API_HOST
+        fromService:
+          name: sentiment-mock-api
+          type: web
+          property: host
+      - key: DATABASE_URL
+        value: postgresql://sentiment_analysis_db_hw4f_user:KbWDg0krIIeSvBWG7r6qLexLWrAinfcA@dpg-cvp8433e5dus73cc808g-a/sentiment_analysis_db_hw4f
+
+  # Main Dashboard Service
+  - name: sentiment-dashboard
+    type: web
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app/dashboard/dashboard.py
+    envVars:
+      - key: API_HOST
+        fromService:
+          name: sentiment-mock-api
+          type: web
+          property: host
+      - key: MODEL_API_HOST
+        fromService:
+          name: sentiment-model-api
+          type: web
+          property: host
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: DATABASE_URL
+        value: postgresql://sentiment_analysis_db_hw4f_user:KbWDg0krIIeSvBWG7r6qLexLWrAinfcA@dpg-cvp8433e5dus73cc808g-a/sentiment_analysis_db_hw4f
+
+  # Social Media Batch Processor
+  - name: sentiment-social-processor
+    type: worker
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app/social_media/data_processor.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: MODEL_API_HOST
+        fromService:
+          name: sentiment-model-api
+          type: web
+          property: host
+      - key: DATABASE_URL
+        value: postgresql://sentiment_analysis_db_hw4f_user:KbWDg0krIIeSvBWG7r6qLexLWrAinfcA@dpg-cvp8433e5dus73cc808g-a/sentiment_analysis_db_hw4f
+
+  # Social Media Authentication UI
+  - name: sentiment-social-auth
+    type: web
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app/social_media/social_media_auth.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: PORT
+        value: 10002
+      - key: DATABASE_URL
+        value: postgresql://sentiment_analysis_db_hw4f_user:KbWDg0krIIeSvBWG7r6qLexLWrAinfcA@dpg-cvp8433e5dus73cc808g-a/sentiment_analysis_db_hw4f
+
+  # Social Media Data Visualization
+  - name: sentiment-social-data
+    type: web
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app/social_media/social_media_data.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: PORT
+        value: 10003
+      - key: MODEL_API_HOST
+        fromService:
+          name: sentiment-model-api
+          type: web
+          property: host
+      - key: DATABASE_URL
+        value: postgresql://sentiment_analysis_db_hw4f_user:KbWDg0krIIeSvBWG7r6qLexLWrAinfcA@dpg-cvp8433e5dus73cc808g-a/sentiment_analysis_db_hw4f
+
+  # CSV Data Upload Page
+  - name: sentiment-csv-upload
+    type: web
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app/social_media/csv_data_upload.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: PORT
+        value: 10004
+      - key: MODEL_API_HOST
+        fromService:
+          name: sentiment-model-api
+          type: web
+          property: host
+      - key: DATABASE_URL
+        value: postgresql://sentiment_analysis_db_hw4f_user:KbWDg0krIIeSvBWG7r6qLexLWrAinfcA@dpg-cvp8433e5dus73cc808g-a/sentiment_analysis_db_hw4f 
